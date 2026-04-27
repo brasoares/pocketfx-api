@@ -1,11 +1,10 @@
-"""Ponto de entrada da PocketFX API."""
+"""PocketFX API entry point."""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
 from app.routers import meta, experiments, analysis
 
-# Cria as tabelas no banco (se não existirem)
 Base.metadata.create_all(bind=engine)
 from app.database import SessionLocal
 from app.seed import seed_demo_experiments
@@ -19,9 +18,9 @@ finally:
 app = FastAPI(
     title="PocketFX API",
     description=(
-        "API para análise multi-ativo (FX + cripto) com três lentes: "
-        "retrospectiva, presente (média móvel) e futuro (Monte Carlo). "
-        "MVP - Pós-Graduação Full Stack PUC-Rio."
+        "Multi-asset analysis API (FX + crypto) with three lenses: "
+        "retrospective, present (moving average), and future (Monte Carlo). "
+        "MVP - Full Stack Post-Graduation PUC-Rio."
     ),
     version="0.2.0",
 )
@@ -34,7 +33,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Registra os routers
 app.include_router(meta.router)
 app.include_router(experiments.router)
 app.include_router(analysis.router)

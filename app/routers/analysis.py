@@ -1,4 +1,4 @@
-"""Rotas de análise: as três lentes (retrospectiva, presente, futuro)."""
+"""Analysis routes: the three lenses (retrospective, present, projection)."""
 from datetime import date
 import numpy as np
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -21,28 +21,28 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 # Helpers
 
 def _validate_asset(asset_type: str, asset_code: str) -> None:
-    """Valida se o par tipo/código é suportado."""
+    """Validates whether the type/code pair is supported."""
     code = asset_code.upper()
     if asset_type == "fx":
         if code not in SUPPORTED_FIAT:
             raise HTTPException(
                 status_code=400,
-                detail=f"Moeda fiat não suportada: {asset_code}. Suportadas: {SUPPORTED_FIAT}",
+                detail=f"Unsupported fiat currency: {asset_code}. Supported: {SUPPORTED_FIAT}",
             )
     elif asset_type == "crypto":
         if code not in SUPPORTED_CRYPTO:
             raise HTTPException(
                 status_code=400,
-                detail=f"Cripto não suportada: {asset_code}. Suportadas: {list(SUPPORTED_CRYPTO.keys())}",
+                detail=f"Unsupported crypto: {asset_code}. Supported: {list(SUPPORTED_CRYPTO.keys())}",
             )
     else:
-        raise HTTPException(status_code=400, detail="asset_type deve ser 'fx' ou 'crypto'")
+        raise HTTPException(status_code=400, detail="asset_type must be 'fx' or 'crypto'")
 
 
 def _get_price_on_date(
     db: Session, asset_type: str, asset_code: str, base_currency: str, target_date: date
 ) -> tuple[float, str]:
-    """Roteia para o serviço correto conforme o tipo do ativo."""
+    """Routes to the correct service based on asset type."""
     if asset_type == "fx":
         return frankfurter.get_rate_on_date(db, asset_code, base_currency, target_date)
     return coingecko.get_price_on_date(db, asset_code, base_currency, target_date)
@@ -56,13 +56,13 @@ def _get_history(
     return coingecko.get_history(db, asset_code, base_currency, days)
 
 
-# ============== LENTE 1: RETROSPECTIVA ==============
+# ============== LENS 1: RETROSPECTIVE ==============
 
 @router.get("/retrospective/{experiment_id}", response_model=schemas.RetrospectiveResponse)
 def retrospective_analysis(experiment_id: int, db: Session = Depends(get_db)):
     """
-    Calcula quanto o experimento valeria hoje.
-    Compara o preço na data do aporte com o preço atual.
+    Calculates what the experiment would be worth today.
+    Compares the asset price at investment date with the current price.
     """
     exp = db.query(models.Experiment).filter(models.Experiment.id == experiment_id).first()
     if not exp:
@@ -78,9 +78,6 @@ def retrospective_analysis(experiment_id: int, db: Session = Depends(get_db)):
     except (frankfurter.FrankfurterError, coingecko.CoinGeckoError) as e:
         raise HTTPException(status_code=502, detail=f"External API error: {e}")
 
-    # Conversão depende do tipo:
-    # - FX: amount_invested está em base_currency. Quanto comprou de asset_code? amount/price_then
-    # - Crypto: idem. amount em base_currency, comprou amount/price_then unidades.
     units_acquired = exp.amount_invested / price_then
     current_value = units_acquired * price_now
     absolute_gain = current_value - exp.amount_invested
@@ -104,7 +101,7 @@ def retrospective_analysis(experiment_id: int, db: Session = Depends(get_db)):
     )
 
 
-# ============== LENTE 2: PRESENTE (média móvel) ==============
+# ============== LENS 2: PRESENT (moving average) ==============
 
 @router.get("/present", response_model=schemas.PresentSignalResponse)
 def present_signal(
@@ -114,8 +111,8 @@ def present_signal(
     db: Session = Depends(get_db),
 ):
     """
-    Compara o preço atual com a média móvel dos últimos 90 dias.
-    Indica se o ativo está acima, abaixo ou dentro da média.
+    Compares the current price against the 90-day moving average.
+    Indicates whether the asset is above, below, or within the average.
     """
     _validate_asset(asset_type, asset_code)
 
@@ -127,7 +124,7 @@ def present_signal(
     if len(history) < 10:
         raise HTTPException(
             status_code=502,
-            detail=f"Histórico insuficiente para análise (apenas {len(history)} dias)."
+            detail=f"Insufficient history for analysis (only {len(history)} days available)."
         )
 
     prices = [price for _, price in history]
@@ -135,7 +132,7 @@ def present_signal(
     moving_avg = sum(prices) / len(prices)
     deviation_pct = ((current_price - moving_avg) / moving_avg) * 100
 
-    # Sinal: acima/abaixo se desvio > 2%, neutro caso contrário
+    # Signal: above/below if deviation > 2%, neutral otherwise
     if deviation_pct > 2:
         signal = "above"
     elif deviation_pct < -2:
@@ -154,7 +151,7 @@ def present_signal(
     )
 
 
-# ============== LENTE 3: FUTURO (Monte Carlo) ==============
+# ============== LENS 3: PROJECTION (Monte Carlo) ==============
 
 @router.get("/projection", response_model=schemas.ProjectionResponse)
 def monte_carlo_projection(
@@ -167,13 +164,13 @@ def monte_carlo_projection(
     db: Session = Depends(get_db),
 ):
     """
-    Projeção de Monte Carlo: simula `n_simulations` trajetórias possíveis
-    para `horizon_days` dias com base na volatilidade histórica do ativo.
+    Monte Carlo projection: simulates n_simulations possible trajectories
+    for horizon_days days based on the asset's historical volatility.
 
-    Retorna leque pessimista (p5), mediano (p50) e otimista (p95).
+    Returns a fan of pessimistic (p5), median (p50), and optimistic (p95) paths.
 
-    IMPORTANTE: cenários estatísticos baseados em volatilidade histórica,
-    NÃO constituem previsão ou recomendação de investimento.
+    IMPORTANT: statistical scenarios based on historical volatility.
+    Do NOT constitute a forecast or investment recommendation.
     """
     _validate_asset(asset_type, asset_code)
 
@@ -213,13 +210,13 @@ def monte_carlo_projection(
             for day, p5, p50, p95 in points
         ],
         disclaimer=(
-            "Cenários estatísticos baseados em volatilidade histórica. "
-            "NÃO constituem previsão ou recomendação de investimento."
+            "Statistical scenarios based on historical volatility. "
+            "Do NOT constitute a forecast or investment recommendation."
         ),
     )
 
 
-# ============== Cotação direta (utilitário) ==============
+# ============== Direct quote (utility) ==============
 
 @router.get("/quote", response_model=schemas.QuoteResponse)
 def get_quote(
@@ -229,7 +226,7 @@ def get_quote(
     quote_date: date = Query(default_factory=date.today),
     db: Session = Depends(get_db),
 ):
-    """Retorna a cotação de um ativo em uma data específica (default: hoje)."""
+    """Returns the price of an asset on a specific date (default: today)."""
     _validate_asset(asset_type, asset_code)
 
     try:

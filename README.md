@@ -99,7 +99,7 @@ docker run -p 8000:8000 pocketfx-api
 - `GET /health` — health check
 
 ### Experiments (CRUD)
-- `GET /experiments` — list all
+- `GET /experiments` — list all (with pagination via `skip`/`limit` and optional `asset_type` filter)
 - `POST /experiments` — create
 - `GET /experiments/{id}` — retrieve
 - `PATCH /experiments/{id}` — partial update

@@ -1,18 +1,18 @@
 # PocketFX API
 
-API REST para análise multi-ativo de investimentos (FX + criptomoedas) com três lentes de análise: retrospectiva, presente (média móvel) e futuro (Monte Carlo).
+REST API for multi-asset investment analysis (FX + cryptocurrencies) with three analysis lenses: retrospective, present (moving average), and future (Monte Carlo projection).
 
-Projeto desenvolvido como MVP da disciplina **Desenvolvimento Backend Avançado** da Pós-Graduação em Desenvolvimento Full Stack — PUC-Rio.
+Developed as the MVP for the **Advanced Backend Development** course — Full Stack Post-Graduation, PUC-Rio.
 
-## Visão geral
+## Overview
 
-O PocketFX permite ao usuário cadastrar experimentos de investimento hipotéticos ("e se eu tivesse colocado X em BTC em 2020?") e analisá-los sob três perspectivas:
+PocketFX lets users register hypothetical investment experiments ("what if I had put X into BTC 6 months ago?") and analyze them from three perspectives:
 
-- **Retrospectiva**: quanto valeria hoje, comparando preço da data do aporte com preço atual.
-- **Presente**: posicionamento do preço atual em relação à média móvel de 90 dias.
-- **Futuro**: projeção via simulação de Monte Carlo (1000 trajetórias por padrão).
+- **Retrospective**: what the investment would be worth today, comparing the price at the investment date with the current price.
+- **Present**: positioning of the current price relative to the 90-day moving average.
+- **Projection**: future scenarios via Monte Carlo simulation (1,000 trajectories by default).
 
-## Arquitetura
+## Architecture
 
 ```
 ┌─────────────────┐         REST/HTTP        ┌──────────────────┐
@@ -31,21 +31,21 @@ O PocketFX permite ao usuário cadastrar experimentos de investimento hipotétic
                                     └─────────┘ └──────────┘ └─────────┘
 ```
 
-## APIs externas utilizadas
+## External APIs
 
 ### Frankfurter
 - URL: https://api.frankfurter.dev
-- Cobertura: câmbio fiat oficial do Banco Central Europeu (ECB), 31 moedas
-- Cadastro: não requerido
-- Licença: open-source, uso livre
-- Endpoints utilizados: `/v1/{date}` (cotação histórica) e `/v1/{start}..{end}` (série temporal)
+- Coverage: official fiat exchange rates from the European Central Bank (ECB), 31 currencies
+- Registration: not required
+- License: open-source, free use
+- Endpoints used: `/v1/{date}` (historical rate) and `/v1/{start}..{end}` (time series)
 
-### CoinGecko (API pública gratuita)
+### CoinGecko (free public API)
 - URL: https://api.coingecko.com
-- Cobertura: criptomoedas (10.000+ ativos)
-- Cadastro: não requerido para o tier público
-- Limite: ~30 requisições/minuto
-- Endpoints utilizados: `/api/v3/coins/{id}/history` e `/api/v3/coins/{id}/market_chart`
+- Coverage: cryptocurrencies (10,000+ assets)
+- Registration: not required for the public tier
+- Rate limit: ~30 requests/minute
+- Endpoints used: `/api/v3/coins/{id}/history` and `/api/v3/coins/{id}/market_chart`
 
 ## Stack
 
@@ -58,81 +58,79 @@ O PocketFX permite ao usuário cadastrar experimentos de investimento hipotétic
 - numpy 2.1
 - Docker
 
-## Instalação local
+## Local Setup
 
-Pré-requisitos: Python 3.12+, Git.
+Prerequisites: Python 3.12+, Git.
 
 ```bash
-# Clone o repositório
+# Clone the repository
 git clone https://github.com/brasoares/pocketfx-api.git
 cd pocketfx-api
 
-# Crie e ative o ambiente virtual
+# Create and activate virtual environment
 python -m venv venv
 .\venv\Scripts\Activate.ps1   # Windows PowerShell
-# ou
+# or
 source venv/bin/activate       # Linux/Mac
 
-# Instale dependências
+# Install dependencies
 pip install -r requirements.txt
 
-# Rode o servidor
+# Run the server
 uvicorn app.main:app --reload
 ```
 
-A API estará disponível em `http://localhost:8000`. A documentação Swagger interativa fica em `http://localhost:8000/docs`.
+The API will be available at `http://localhost:8000`. Interactive Swagger docs at `http://localhost:8000/docs`.
 
-## Execução com Docker
+## Running with Docker
 
 ```bash
-# Build da imagem
+# Build the image
 docker build -t pocketfx-api .
 
-# Rodar contêiner
+# Run the container
 docker run -p 8000:8000 pocketfx-api
 ```
 
-Acesse `http://localhost:8000/docs` para a documentação interativa.
-
-## Rotas principais
+## Routes
 
 ### Meta
-- `GET /` — informação do serviço
+- `GET /` — service info
 - `GET /health` — health check
 
-### Experimentos (CRUD)
-- `GET /experiments` — listar (com filtro e paginação)
-- `POST /experiments` — criar
-- `GET /experiments/{id}` — buscar
-- `PATCH /experiments/{id}` — atualizar parcialmente
-- `DELETE /experiments/{id}` — apagar
+### Experiments (CRUD)
+- `GET /experiments` — list all
+- `POST /experiments` — create
+- `GET /experiments/{id}` — retrieve
+- `PATCH /experiments/{id}` — partial update
+- `DELETE /experiments/{id}` — delete
 
-### Análise (as 3 lentes)
-- `GET /analysis/retrospective/{experiment_id}` — quanto valeria hoje
-- `GET /analysis/present` — sinal vs. média móvel 90d
-- `GET /analysis/projection` — Monte Carlo
-- `GET /analysis/quote` — cotação direta
+### Analysis (three lenses)
+- `GET /analysis/retrospective/{experiment_id}` — what it would be worth today
+- `GET /analysis/present` — signal vs. 90d moving average
+- `GET /analysis/projection` — Monte Carlo projection
+- `GET /analysis/quote` — direct price quote
 
-## Ativos suportados
+## Supported Assets
 
 **FX**: USD, EUR, JPY, GBP, CNY, CHF, BRL  
 **Crypto**: BTC, ETH, USDC, SOL, ADA
 
-## Estrutura do código
+## Project Structure
 
 ```
 pocketfx-api/
 ├── app/
-│   ├── main.py            # ponto de entrada FastAPI
-│   ├── config.py          # constantes globais
-│   ├── database.py        # conexão SQLite
-│   ├── models.py          # tabelas SQLAlchemy
-│   ├── schemas.py         # validação Pydantic
-│   ├── routers/           # rotas HTTP por domínio
+│   ├── main.py            # FastAPI entry point
+│   ├── config.py          # global constants
+│   ├── database.py        # SQLite connection
+│   ├── models.py          # SQLAlchemy models
+│   ├── schemas.py         # Pydantic schemas
+│   ├── routers/           # HTTP routes by domain
 │   │   ├── meta.py
 │   │   ├── experiments.py
 │   │   └── analysis.py
-│   └── services/          # lógica de negócio + integrações
+│   └── services/          # business logic + integrations
 │       ├── frankfurter.py
 │       ├── coingecko.py
 │       └── monte_carlo.py
@@ -141,14 +139,14 @@ pocketfx-api/
 └── README.md
 ```
 
-## Aviso
+## Disclaimer
 
-Os cenários gerados pela rota de projeção são simulações estatísticas baseadas em volatilidade histórica. **Não constituem previsão de mercado nem recomendação de investimento.**
+Projection scenarios are statistical simulations based on historical volatility. **They do not constitute market forecasts or investment recommendations.**
 
-## Licença
+## License
 
-Apache 2.0 — ver arquivo `LICENSE`.
+Apache 2.0 — see `LICENSE` file.
 
-## Autor
+## Author
 
 Henoc Soares Freire — [github.com/brasoares](https://github.com/brasoares)

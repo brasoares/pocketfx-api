@@ -1,4 +1,4 @@
-"""CRUD de experimentos."""
+"""Experiments CRUD."""
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -16,7 +16,7 @@ def list_experiments(
     asset_type: Optional[str] = Query(None, pattern="^(fx|crypto)$"),
     db: Session = Depends(get_db),
 ):
-    """Lista experimentos com paginação e filtro opcional por tipo de ativo."""
+    """List experiments with pagination and optional asset type filter."""
     query = db.query(models.Experiment)
     if asset_type:
         query = query.filter(models.Experiment.asset_type == asset_type)
@@ -28,7 +28,7 @@ def create_experiment(
     experiment: schemas.ExperimentCreate,
     db: Session = Depends(get_db),
 ):
-    """Cria um novo experimento de investimento hipotético."""
+    """Create a new hypothetical investment experiment."""
     db_experiment = models.Experiment(**experiment.model_dump())
     db.add(db_experiment)
     db.commit()
@@ -38,7 +38,7 @@ def create_experiment(
 
 @router.get("/{experiment_id}", response_model=schemas.ExperimentResponse)
 def get_experiment(experiment_id: int, db: Session = Depends(get_db)):
-    """Retorna um experimento específico."""
+    """Retrieve a specific experiment."""
     db_experiment = db.query(models.Experiment).filter(models.Experiment.id == experiment_id).first()
     if not db_experiment:
         raise HTTPException(status_code=404, detail="Experiment not found")
@@ -51,7 +51,7 @@ def update_experiment(
     experiment_update: schemas.ExperimentUpdate,
     db: Session = Depends(get_db),
 ):
-    """Atualiza parcialmente um experimento existente."""
+    """Partially update an existing experiment."""
     db_experiment = db.query(models.Experiment).filter(models.Experiment.id == experiment_id).first()
     if not db_experiment:
         raise HTTPException(status_code=404, detail="Experiment not found")
@@ -65,7 +65,7 @@ def update_experiment(
 
 @router.delete("/{experiment_id}", status_code=204)
 def delete_experiment(experiment_id: int, db: Session = Depends(get_db)):
-    """Deleta um experimento."""
+    """Delete an experiment."""
     db_experiment = db.query(models.Experiment).filter(models.Experiment.id == experiment_id).first()
     if not db_experiment:
         raise HTTPException(status_code=404, detail="Experiment not found")
